@@ -71,7 +71,7 @@ fun cleanOldInstances(name: String, out: OutputStream) = exec {
 
 // Effectively run the container to verify the fileName passed. The fileName should be a jpf file
 fun runJPF(name: String, fileName: String): () -> ExecResult = {
-    println(name)
+    exec { commandLine("ls") }
     exec { commandLine("docker", "exec", name, "./gradlew", "build") }
     exec { commandLine("docker", "exec", name, "java", "-jar", "/usr/lib/JPF/jpf-core/build/RunJPF.jar", fileName)}
 }
