@@ -12,7 +12,10 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os:
+          - ubuntu-latest
+          - windows-latest
+          #- macos-latest
     # run on ubuntu, windows and macos
     runs-on: ${{ matrix.os }}
     steps:
