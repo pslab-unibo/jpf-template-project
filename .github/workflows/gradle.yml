@@ -10,8 +10,11 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    # run on ubuntu, windows and macos
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
     - name: Set up JDK 11
