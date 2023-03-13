@@ -71,6 +71,7 @@ fun cleanOldInstances(name: String, out: OutputStream) = exec {
 
 // Effectively run the container to verify the fileName passed. The fileName should be a jpf file
 fun runJPF(name: String, fileName: String): () -> ExecResult = {
+    println(name)
     exec { commandLine("docker", "exec", name, "./gradlew", "build") }
     exec { commandLine("docker", "exec", name, "java", "-jar", "/usr/lib/JPF/jpf-core/build/RunJPF.jar", fileName)}
 }
@@ -94,20 +95,21 @@ File(rootProject.rootDir.path + searchingPath).listFiles()
         fun launchVerificationTask(taskName: String, file: File) = tasks.register<Task>(taskName) {
             group = verificationGroup
             description = "Verify the ${file.nameWithoutExtension} using JPF"
-            // Get the container in execution
-            val stdout = ByteArrayOutputStream()
-            // Get all the folders and file of this project and bind them with the docker image
-            // Get the container in execution
-            exec {
-                commandLine("docker", "container", "ps")
-                standardOutput = stdout
+            doFirst {
+                // Get the container in execution
+                val stdout = ByteArrayOutputStream()
+                // Get all the folders and file of this project and bind them with the docker image
+                // Get the container in execution
+                exec {
+                    commandLine("docker", "container", "ps")
+                    standardOutput = stdout
+                }
+                // If there isn't the project container, the process should clean the environment (i.e. kill the previous container and starts a new one)
+                if (!stdout.toString().contains(file.nameWithoutExtension)) {
+                    cleanOldInstances(file.nameWithoutExtension, stdout)
+                    mountNewContainer(allFileButBuildAndHide, file.nameWithoutExtension, stdout)
+                }
             }
-            // If there isn't the project container, the process should clean the environment (i.e. kill the previous container and starts a new one)
-            if(!stdout.toString().contains(file.nameWithoutExtension)) {
-                cleanOldInstances(file.nameWithoutExtension, stdout)
-                mountNewContainer(allFileButBuildAndHide, file.nameWithoutExtension, stdout)
-            }
-            //mountNewContainer(allFileButBuildAndHide, file.nameWithoutExtension, noOutput).exitValue
             doLast {
                runJPF(file.nameWithoutExtension, ".${searchingPath}" + file.name)()
             }
@@ -124,6 +126,7 @@ File(rootProject.rootDir.path + searchingPath).listFiles()
         val jpfVerification by launchVerificationTask("run${capitalizedName}Verify", it)
         val jpfClean by clean("run${capitalizedName}Clean", capitalizedName)
         cleanAll.dependsOn(jpfClean)
+        verifyAll.dependsOn(jpfVerification)
     }
 
 /**
@@ -136,23 +139,24 @@ File(rootProject.rootDir.path + searchingPath).listFiles()
 tasks.register("jpfVerify") {
     group = "Verification"
     description = "Run JPF verification with ./gradlew jpfVerify /path/of/your/jpf"
-    val stdout = ByteArrayOutputStream()
-    // Get all the folders and file of this project and bind them with the docker image
-    // NB! .gradle and build should not be included, the compile process should be done with the internal jdk
-    val toMount: Array<String> = allFileButBuildAndHide
-    // Get the container in execution
-    exec {
-        commandLine("docker", "container", "ps")
-        standardOutput = stdout
-    }
-    // If there isn't the project container, the process should clean the environment (i.e. kill the previous container and starts a new one)
-    if(!stdout.toString().contains("jpf_run_${project.name}")) {
-        cleanOldInstances(project.name, stdout)
-        mountNewContainer(toMount, project.name, stdout)
-    }
+
     doFirst {
         if(!properties.containsKey("file")) {
             error("""you have to pass the file that you want to verify. Use: -Pfile="/your/path/file.jpf" """)
+        }
+        val stdout = ByteArrayOutputStream()
+        // Get all the folders and file of this project and bind them with the docker image
+        // NB! .gradle and build should not be included, the compile process should be done with the internal jdk
+        val toMount: Array<String> = allFileButBuildAndHide
+        // Get the container in execution
+        exec {
+            commandLine("docker", "container", "ps")
+            standardOutput = stdout
+        }
+        // If there isn't the project container, the process should clean the environment (i.e. kill the previous container and starts a new one)
+        if(!stdout.toString().contains("jpf_run_${project.name}")) {
+            cleanOldInstances(project.name, stdout)
+            mountNewContainer(toMount, project.name, stdout)
         }
     }
 
