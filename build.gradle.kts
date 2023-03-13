@@ -76,7 +76,7 @@ fun runJPF(name: String, fileName: String): () -> ExecResult = {
 }
 
 // Path in which the search of other jpf file starts
-val searchingPath = "src/main/jpf"
+val searchingPath = "/src/main/jpf/"
 
 // Output for all tasks
 val noOutput = ByteArrayOutputStream()
@@ -94,9 +94,22 @@ File(rootProject.rootDir.path + searchingPath).listFiles()
         fun launchVerificationTask(taskName: String, file: File) = tasks.register<Task>(taskName) {
             group = verificationGroup
             description = "Verify the ${file.nameWithoutExtension} using JPF"
-            mountNewContainer(allFileButBuildAndHide, file.nameWithoutExtension, noOutput)
+            // Get the container in execution
+            val stdout = ByteArrayOutputStream()
+            // Get all the folders and file of this project and bind them with the docker image
+            // Get the container in execution
+            exec {
+                commandLine("docker", "container", "ps")
+                standardOutput = stdout
+            }
+            // If there isn't the project container, the process should clean the environment (i.e. kill the previous container and starts a new one)
+            if(!stdout.toString().contains(file.nameWithoutExtension)) {
+                cleanOldInstances(file.nameWithoutExtension, stdout)
+                mountNewContainer(allFileButBuildAndHide, file.nameWithoutExtension, stdout)
+            }
+            //mountNewContainer(allFileButBuildAndHide, file.nameWithoutExtension, noOutput).exitValue
             doLast {
-               runJPF(file.nameWithoutExtension, ".${searchingPath}/" + file.name)()
+               runJPF(file.nameWithoutExtension, ".${searchingPath}" + file.name)()
             }
         }
         fun clean(taskName: String, fileName: String) = tasks.register<Task>(taskName) {
