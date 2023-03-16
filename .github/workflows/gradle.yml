@@ -28,6 +28,6 @@ jobs:
     - name: Build with gradlew
       run: ./gradlew
     - name: Verify all JPF
-      run: ./gradlew runAllJPF
+      run: ./gradlew runVerifyAll
     - name: Clean everythig
-      run: ./gradlew cleanAll
+      run: ./gradlew cleanJPF

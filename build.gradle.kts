@@ -1,4 +1,5 @@
 
+import org.gradle.configurationcache.extensions.capitalized
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 
@@ -29,12 +30,7 @@ tasks.getByName<Test>("test") {
 
 val verificationGroup = "Verification"
 
-val cleanAll by tasks.register<DefaultTask>("cleanAllJPF") {
-    group = verificationGroup
-    description = "Clean all the JPF containers in running"
-}
-
-val verifyAll by tasks.register<DefaultTask>("runAllJPF") {
+val verifyAll by tasks.register<DefaultTask>("runVerifyAll") {
     group = verificationGroup
     description = "Run all the JPF verification"
 }
@@ -81,6 +77,9 @@ val searchingPath = "/src/main/jpf/"
 
 // Output for all tasks
 val noOutput = ByteArrayOutputStream()
+
+// image docker for running verification
+val runner = "jpfRunner${project.name.capitalized()}"
 /**
  * This will create a task for each jpf file in the src/main/jpf folder
  * Particularly, it will create two tasks called run<FileName>Verify and run<FileName>Clean
@@ -105,30 +104,28 @@ File(rootProject.rootDir.path + searchingPath).listFiles()
                     standardOutput = stdout
                 }
                 // If there isn't the project container, the process should clean the environment (i.e. kill the previous container and starts a new one)
-                if (!stdout.toString().contains(file.nameWithoutExtension)) {
-                    cleanOldInstances(file.nameWithoutExtension, stdout)
-                    mountNewContainer(allFileButBuildAndHide, file.nameWithoutExtension, stdout)
+                if (!stdout.toString().contains(runner)) {
+                    cleanOldInstances(runner, stdout)
+                    mountNewContainer(allFileButBuildAndHide, runner, stdout)
                 }
             }
             doLast {
-               runJPF(file.nameWithoutExtension, ".${searchingPath}" + file.name)()
-            }
-        }
-        fun clean(taskName: String, fileName: String) = tasks.register<Task>(taskName) {
-            group = verificationGroup
-            description = "Verify the ${fileName} using JPF"
-            doLast {
-                println("Cleaning the $fileName container")
-                cleanOldInstances(fileName, noOutput)
+               runJPF(runner, ".${searchingPath}" + file.name)()
             }
         }
         val capitalizedName = it.nameWithoutExtension.capitalize()
         val jpfVerification by launchVerificationTask("run${capitalizedName}Verify", it)
-        val jpfClean by clean("run${capitalizedName}Clean", capitalizedName)
-        cleanAll.dependsOn(jpfClean)
         verifyAll.dependsOn(jpfVerification)
     }
 
+tasks.register("cleanJPF") {
+    group = verificationGroup
+    description = "Clean the jpf container (if exisit)"
+    doLast {
+        println("Cleaning the $runner container")
+        cleanOldInstances(runner, noOutput)
+    }
+}
 /**
  * This task will run the verification of the jpf file passed with the -Pfile parameter
  * The file should be a jpf file
@@ -154,13 +151,13 @@ tasks.register("jpfVerify") {
             standardOutput = stdout
         }
         // If there isn't the project container, the process should clean the environment (i.e. kill the previous container and starts a new one)
-        if(!stdout.toString().contains("jpf_run_${project.name}")) {
-            cleanOldInstances(project.name, stdout)
-            mountNewContainer(toMount, project.name, stdout)
+        if(!stdout.toString().contains(runner)) {
+            cleanOldInstances(runner, stdout)
+            mountNewContainer(toMount, runner, stdout)
         }
     }
 
     doLast {
-        runJPF(project.name, properties["file"].toString())()
+        runJPF(runner, properties["file"].toString())()
     }
 }
