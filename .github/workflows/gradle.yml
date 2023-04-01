@@ -29,5 +29,3 @@ jobs:
       run: ./gradlew
     - name: Verify all JPF
       run: ./gradlew runVerifyAll
-    - name: Clean everythig
-      run: ./gradlew cleanJPF
