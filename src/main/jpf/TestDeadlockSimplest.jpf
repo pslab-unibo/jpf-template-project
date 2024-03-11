@@ -1,4 +1,4 @@
-target = lab02.jpf.TestCheckAct
+target = pcd.lab03.liveness.deadlock_simplest.TestDeadlockedResource
 
 classpath=build/classes/java/main
 

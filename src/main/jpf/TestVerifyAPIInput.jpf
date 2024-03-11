@@ -1,4 +1,4 @@
-target = lab02.jpf.TestCheckAct
+target = pcd.lab03.jpfmix.TestVerifyAPIInput
 
 classpath=build/classes/java/main
 
