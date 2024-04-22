@@ -1,0 +1,9 @@
+target = pcd.ass01.simengine_conc.cli.RunTrafficSimulation
+
+classpath=build/classes/java/main
+
+sourcepath=src/main/java
+
+listener=gov.nasa.jpf.listener.PreciseRaceDetector
+
+report.console.property_violation=error,trace
