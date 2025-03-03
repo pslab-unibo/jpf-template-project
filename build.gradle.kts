@@ -76,7 +76,12 @@ File(rootProject.rootDir.path + searchingPath).listFiles()
                 }
             )
             main = "-jar"
-            args = listOf("./jpf-runner/build/RunJPF.jar", ".${searchingPath}" + file.name)
+            args = listOf(
+                "-jar",
+                "--add-opens", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                "./jpf-runner/build/RunJPF.jar", ".${searchingPath}" + file.name
+            )
+            //args = listOf("./jpf-runner/build/RunJPF.jar", ".${searchingPath}" + file.name)
         }
         val capitalizedName = it.nameWithoutExtension.capitalize()
         val jpfVerification by launchVerificationTask("run${capitalizedName}Verify", it)
