@@ -27,7 +27,7 @@ tasks.getByName<Test>("test") {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(8))
+        languageVersion.set(JavaLanguageVersion.of(11))
         vendor.set(JvmVendorSpec.ADOPTIUM)
     }
 }
@@ -72,7 +72,7 @@ File(rootProject.rootDir.path + searchingPath).listFiles()
             description = "Verify the ${file.nameWithoutExtension} using JPF"
             javaLauncher.set(
                 javaToolchains.launcherFor {
-                    languageVersion.set(JavaLanguageVersion.of(8))
+                    languageVersion.set(JavaLanguageVersion.of(11))
                 }
             )
             main = "-jar"
